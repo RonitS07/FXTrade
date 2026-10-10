@@ -1,0 +1,73 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String
+  name      String?
+  balance   Float    @default(100000)
+  onboarded Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  watchlist Watchlist[]
+  portfolio Portfolio[]
+  trades    Trade[]
+  history   History[]
+}
+
+model Watchlist {
+  id        String   @id @default(cuid())
+  userId    String
+  symbol    String
+  
+  user      User     @relation(fields: [userId], references: [id])
+  
+  @@unique([userId, symbol])
+}
+
+model Trade {
+  id          String   @id @default(cuid())
+  userId      String
+  symbol      String
+  action      String   // BUY or SELL
+  type        String   @default("MARKET") // MARKET, LIMIT, SL
+  price       Float    // Execution price
+  limitPrice  Float?   // For Limit orders
+  stopPrice   Float?   // For SL orders
+  targetPrice Float?   // Optional Target
+  qty         Int
+  cost        Float    // Total cost including tax
+  status      String   @default("EXECUTED") // OPEN, EXECUTED, CANCELLED
+  timestamp   DateTime @default(now())
+  
+  user      User     @relation(fields: [userId], references: [id])
+}
+
+model Portfolio {
+  id        String   @id @default(cuid())
+  userId    String
+  symbol    String
+  qty       Int
+  avgCost   Float
+  
+  user      User     @relation(fields: [userId], references: [id])
+  
+  @@unique([userId, symbol])
+}
+
+model History {
+  id         String   @id @default(cuid())
+  userId     String
+  date       DateTime @default(now())
+  totalValue Float
+  pl         Float
+  
+  user       User     @relation(fields: [userId], references: [id])
+}
